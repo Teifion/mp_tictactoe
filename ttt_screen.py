@@ -29,7 +29,7 @@ class Screen (object):
         self.state = [0 for x in range(9)]
         
         # This is the title drawn at the top of the window
-        self.name = ""
+        self.name = "Tic Tac Toe"
         
         # FPS
         self._next_redraw = time.time()
@@ -44,7 +44,6 @@ class Screen (object):
         self.scroll_x, self.scroll_y = 0, 0# Current location scrolled to
         
         # If image == None the colour is used instead
-        self.background_image   = None
         self.background_colour  = (200, 200, 200)# Default to a grey background
         
         # Used for working out double click stuff
@@ -99,6 +98,9 @@ class Screen (object):
         
         return self.image_cache[img_name]
     
+    def make_move(self, x, y):
+        pass
+    
     def redraw(self):
         """Basic screens do not have scrolling capabilities
         you'd need to use a subclass for that"""
@@ -107,12 +109,7 @@ class Screen (object):
         
         surf = self.engine.display
         
-        if self.background_image == None:
-            surf.fill(self.background_colour)
-        else:
-            self.background = self.background_image.copy()
-            surf.blit(self.background, pygame.Rect(0, 0, self.size[0], self.size[1]))
-        
+        surf.fill(self.background_colour)
         
         # Draw divider lines
         draw.line(surf, (0,0,0), (200, 0), (200, 600), 5)
@@ -225,7 +222,7 @@ class Screen (object):
         x = int(event.pos[0] / 200)
         y = int(event.pos[1] / 200)
         
-        print(x,y)
+        self.make_move(x,y)
     
     def _handle_doubleclick(self, first_click, second_click):
         self.handle_doubleclick(first_click, second_click)
@@ -327,4 +324,5 @@ class Screen (object):
         self.fullscreen = False
         
         self.engine.display = pygame.display.set_mode(self.size)
+    
     

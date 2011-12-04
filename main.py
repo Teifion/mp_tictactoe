@@ -1,5 +1,6 @@
 import sys
 import ttt_server, ttt_client, ttt_screen, ttt_core
+import multiprocessing
 
 class Game (ttt_core.EngineV4):
     name = "Tic tac toe"
@@ -11,13 +12,6 @@ class Game (ttt_core.EngineV4):
     
     def __init__(self):
         super(Game, self).__init__()
-        
-        # self.load_static_images(
-        #     "media/red_shuttle.png",
-        #     "media/red_factory.png",
-        #     "media/red_mine.png",
-        #     "media/red_cruiser.png",
-        # )
     
     def startup(self):
         super(Game, self).startup()
@@ -29,12 +23,31 @@ class Game (ttt_core.EngineV4):
     
     def new_game(self):
         pass
-        
+
 
 if __name__ == '__main__':
+    # If we supply an IP address we connect
     if len(sys.argv) > 1:
         ip_addr = sys.argv[1]
     
+    # If no IP address then we start a server
+    else:
+        parent_conn, child_conn = multiprocessing.Pipe()
+        
+        server_proc = multiprocessing.Process(
+            target=ttt_server.new_server,
+            args=(child_conn, )
+        )
+        server_proc.start()
+        
+        parent_conn.send(["quit", {}])
+        
+        print(parent_conn.recv())
+        
+        server_proc.join()
+    
     g = Game()
     g.start()
+    
+    
     

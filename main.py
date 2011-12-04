@@ -40,14 +40,12 @@ if __name__ == '__main__':
         )
         server_proc.start()
         
-        parent_conn.send(["quit", {}])
-        
-        print(parent_conn.recv())
-        
-        server_proc.join()
+        port_number = parent_conn.recv()
     
     g = Game()
     g.start()
     
-    
-    
+    parent_conn.send(["quit", {}])
+    server_proc.join()
+
+

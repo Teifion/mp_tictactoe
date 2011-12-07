@@ -1,2 +1,6 @@
-This is a project to get the hang of using twisted for networking. There is
-a lot of stuff in this from the Sequtus engines we don't need here.
+Originally I was going to use twisted for networking but I couldn't work it
+out and any questions I asked seemed to be misunderstood to the extent I
+figured twisted was not the way to go on this one.
+
+I found http://pygame.org/project-NetPong-1377-.html and produced
+mp tic_tac_toe.

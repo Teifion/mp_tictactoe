@@ -1,5 +1,7 @@
 from __future__ import division
 
+from PodSixNet.Connection import connection, ConnectionListener
+
 import time
 import math
 
@@ -26,7 +28,7 @@ class Screen (object):
         
         # Empty holders
         self.image_cache = {}
-        self.state = [0 for x in range(9)]
+        self.state = [-1 for x in range(9)]
         
         # This is the title drawn at the top of the window
         self.name = "Tic Tac Toe"
@@ -34,6 +36,10 @@ class Screen (object):
         # FPS
         self._next_redraw = time.time()
         self._redraw_delay = screen_lib.set_fps(self, 30)
+        
+        # CPS
+        self._next_update = time.time()
+        self._update_delay = screen_lib.set_fps(self, 30)
         
         # Saved variables
         self.mouse_is_down = False
@@ -75,7 +81,10 @@ class Screen (object):
             self.switch_to_windowed()
     
     def update(self):
-        pass
+        if time.time() < self._next_update:
+            return
+        
+        self._next_update = time.time() + self._update_delay
     
     def get_rotated_image(self, core_image_name, frame, rotation):
         rounded_facing = screen_lib.get_facing_angle(
@@ -99,7 +108,7 @@ class Screen (object):
         return self.image_cache[img_name]
     
     def make_move(self, x, y):
-        pass
+        connection.Send({'action': 'move', 'x': x, 'y': y})
     
     def redraw(self):
         """Basic screens do not have scrolling capabilities
@@ -143,7 +152,7 @@ class Screen (object):
             draw.line(surf, (0,0,0), (x1, y1), (x2, y2), 5)
             draw.line(surf, (0,0,0), (x2, y1), (x1, y2), 5)
             
-        elif value == -1:# O
+        elif value == 0:# O
             x = int(x)
             y = int(y)
             draw.circle(surf, (0,0,0), (100 + x * 200, 100 + y * 200), 75)

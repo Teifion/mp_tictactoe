@@ -1,5 +1,5 @@
 import sys
-import ttt_server, ttt_client, ttt_screen, ttt_core
+import ttt_server, ttt_screen, ttt_core
 import multiprocessing
 
 class Game (ttt_core.EngineV4):
@@ -10,11 +10,11 @@ class Game (ttt_core.EngineV4):
     screen_size = [600, 600]
     fullscreen = False
     
-    def __init__(self):
-        super(Game, self).__init__()
+    def __init__(self, address, port):
+        ttt_core.EngineV4.__init__(self, address, port)
     
     def startup(self):
-        super(Game, self).startup()
+        ttt_core.EngineV4.startup(self)
         
         self.screens['Game'] = ttt_screen.Screen
         
@@ -28,7 +28,9 @@ class Game (ttt_core.EngineV4):
 if __name__ == '__main__':
     # If we supply an IP address we connect
     if len(sys.argv) > 1:
-        ip_addr = sys.argv[1]
+        address = sys.argv[1]
+        port = int(sys.argv[2])
+        parent_conn = None
     
     # If no IP address then we start a server
     else:
@@ -40,12 +42,21 @@ if __name__ == '__main__':
         )
         server_proc.start()
         
-        port_number = parent_conn.recv()
+        d = parent_conn.recv()
+        
+        if d != "setup complete":
+            parent_conn.send(["quit", {}])
+            raise Exception("Unexpected value from parent_conn: {}".format(d))
+        
+        address = parent_conn.recv()
+        port = parent_conn.recv()
     
-    g = Game()
+    # Lets start our game
+    g = Game(address, port)
     g.start()
     
-    parent_conn.send(["quit", {}])
-    server_proc.join()
+    if len(sys.argv) <= 1:
+        parent_conn.send(["quit", {}])
+        server_proc.join()
 
 

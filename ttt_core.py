@@ -1,5 +1,7 @@
 from __future__ import division
 
+from PodSixNet.Connection import connection, ConnectionListener
+
 import sys
 import time
 import math
@@ -11,27 +13,41 @@ from pygame.locals import *
 
 file_name = re.compile(r".*/(.*?)\.[a-zA-Z]*")
 
-class EngineV4 (object):
+class EngineV4 (ConnectionListener):
     fps = 30
     
     facings = 360/4# The number of different angles we'll draw
     
-    def __init__(self):
+    def __init__(self, host, port):
         super(EngineV4, self).__init__()
+        
+        self.Connect((host, port))
         
         self.screens = {}
         self.current_screen = None
         self.images = {}
     
-    def quit(self, event=None):
-        pygame.quit()
-        sys.exit()
-    
     def startup(self):
-        pygame.init()
-        self.clock = pygame.time.Clock()
-        
-        self.display = pygame.display.set_mode(self.screen_size)
+        pass
+    
+    def Network_gamestate(self, data):
+        self.current_screen.state = data['state']
+    
+    def Network_connected(self, data):
+        print "connected to the server"
+    
+    def Network_error(self, data):
+        print "error:", data['error'][1]
+    
+    def Network_disconnected(self, data):
+        print "disconnected from the server"
+    
+    def Network_myaction(data):
+        print "myaction:", data
+    
+    def quit(self, event=None):
+        self.running = False
+        connection.Send({'action': 'quit'})
     
     def set_screen(self, s, *args, **kwargs):
         # s can be a screen instance or the name of a screen in self.screens
@@ -60,10 +76,15 @@ class EngineV4 (object):
     
     # Contains main execution loop
     def start(self):
+        pygame.init()
+        self.display = pygame.display.set_mode(self.screen_size)
+        
+        self.running = True
+        
         try:
             self.startup()
             
-            while True:
+            while self.running:
                 for event in pygame.event.get():
                     if event.type == ACTIVEEVENT:       self.current_screen._handle_active(event)
                     if event.type == KEYDOWN:           self.current_screen._handle_keydown(event)
@@ -72,19 +93,27 @@ class EngineV4 (object):
                     if event.type == MOUSEBUTTONDOWN:   self.current_screen._handle_mousedown(event)
                     if event.type == MOUSEMOTION:       self.current_screen._handle_mousemotion(event)
                     if event.type == QUIT:              self.current_screen.quit(event)
-
+                
                 # Check to see if a key has been held down
                 self.current_screen._handle_keyhold()
-
+                
+                connection.Pump()
+                self.Pump()
+                
                 self.current_screen.update()
                 self.current_screen.redraw()
             
         except Exception as e:
+            print("")
             traceback.print_exc(file=sys.stdout)
-            self.current_screen.quit()
+            connection.Send({'action': 'quit'})
+            
+            if self.current_screen != None:
+                self.current_screen.quit()
             raise
         
         self.quit()
+        pygame.quit()
     
     def load_static_images(self, *images):
         pygame.image.load("media/red_shuttle.png")

@@ -4,3 +4,20 @@ figured twisted was not the way to go on this one.
 
 I found http://pygame.org/project-NetPong-1377-.html and produced
 mp tic_tac_toe.
+
+Running the program normally:
+
+    python main.py
+
+Running the program to connect to another server:
+
+    python main.py <address> <port>
+    
+    e.g. python main.py 192.168.0.52 31500
+
+Running two copies of the program at the same time can be achieved with:
+
+    python main.py dual
+
+This will use multiprocessing to start two clients rather than just one.
+

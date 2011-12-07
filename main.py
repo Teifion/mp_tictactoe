@@ -24,39 +24,70 @@ class Game (ttt_core.EngineV4):
     def new_game(self):
         pass
 
+def run_server():
+    parent_conn, child_conn = multiprocessing.Pipe()
+    
+    server_proc = multiprocessing.Process(
+        target=ttt_server.new_server,
+        args=(child_conn, )
+    )
+    server_proc.start()
+    
+    d = parent_conn.recv()
+    
+    if d != "setup complete":
+        parent_conn.send(["quit", {}])
+        raise Exception("Unexpected value from parent_conn: {}".format(d))
+    
+    address = parent_conn.recv()
+    port = parent_conn.recv()
+    
+    return address, port, parent_conn, server_proc
+
+def run_client(address, port):
+    g = Game(address, port)
+    g.start()
 
 if __name__ == '__main__':
     # If we supply an IP address we connect
-    if len(sys.argv) > 1:
+    if len(sys.argv) == 2:
+        mode = sys.argv[1]
+        
+        if mode == "dual":
+            address, port, conn, server_proc = run_server()
+            
+            c1 = multiprocessing.Process(
+                target=run_client,
+                args=(address, port)
+            )
+            
+            c2 = multiprocessing.Process(
+                target=run_client,
+                args=(address, port)
+            )
+            
+            c1.start()
+            c2.start()
+            
+            c1.join()
+            c2.join()
+            
+            conn.send(["quit", {}])
+            server_proc.join()
+    
+    elif len(sys.argv) > 2:
         address = sys.argv[1]
         port = int(sys.argv[2])
-        parent_conn = None
+        
+        run_client(address, port)
     
-    # If no IP address then we start a server
     else:
-        parent_conn, child_conn = multiprocessing.Pipe()
+        address, port, conn, server_proc = run_server()
         
-        server_proc = multiprocessing.Process(
-            target=ttt_server.new_server,
-            args=(child_conn, )
-        )
-        server_proc.start()
-        
-        d = parent_conn.recv()
-        
-        if d != "setup complete":
-            parent_conn.send(["quit", {}])
-            raise Exception("Unexpected value from parent_conn: {}".format(d))
-        
-        address = parent_conn.recv()
-        port = parent_conn.recv()
-    
-    # Lets start our game
-    g = Game(address, port)
-    g.start()
-    
-    if len(sys.argv) <= 1:
-        parent_conn.send(["quit", {}])
-        server_proc.join()
+        g = Game(address, port)
+        g.start()
 
+        conn.send(["quit", {}])
+        server_proc.join()
+    
 
